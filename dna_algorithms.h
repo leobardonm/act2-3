@@ -433,75 +433,146 @@ public:
 void demonstrateDNAAlgorithms() {
     std::cout << "\n" << std::string(70, '=') << "\n";
     std::cout << "  DNA SEQUENCE ANALYSIS ALGORITHMS\n";
+    std::cout << "  Problem 2: Genomic String Analysis\n";
     std::cout << std::string(70, '=') << "\n";
     
-    // Sample DNA sequences
-    std::string seqA = "ACGTACGTGACGTACGTAATCGAATCGACGTACGTACGT";
-    std::string seqB = "GCTAGCTAGCTACGTACGTTTTACGTACGTAGCTAGCTA";
+    // ========================================================================
+    // INPUT: Two DNA strings A, B ∈ {A,C,G,T}*
+    // ========================================================================
+    std::string seqA = "ACGTACGTGACGTACGTAATCGAATCGACGTACGTACGTTATAACGTACGT";
+    std::string seqB = "GCTAGCTAGCTACGTACGTTTTACGTACGTAGCTAGCTATAAGCTAGCTAT";
     
-    std::cout << "\nSequence A: " << seqA << " (length: " << seqA.size() << ")\n";
-    std::cout << "Sequence B: " << seqB << " (length: " << seqB.size() << ")\n";
+    std::cout << "\n=== INPUT DNA SEQUENCES ===\n";
+    std::cout << "Alphabet: Σ = {A, C, G, T}\n\n";
+    std::cout << "Sequence A (|A| = " << seqA.size() << "):\n";
+    std::cout << "  " << seqA << "\n\n";
+    std::cout << "Sequence B (|B| = " << seqB.size() << "):\n";
+    std::cout << "  " << seqB << "\n";
     
-    // 2.a Manacher's Algorithm - Longest Palindrome
-    std::cout << "\n--- 2.a Manacher's Algorithm (Longest Palindrome) ---\n";
+    // ========================================================================
+    // 2.a MANACHER'S ALGORITHM - Longest Palindromic Substring
+    // ========================================================================
+    std::cout << "\n" << std::string(70, '-') << "\n";
+    std::cout << "2.a. MANACHER'S ALGORITHM - Longest Palindromic Regions\n";
+    std::cout << std::string(70, '-') << "\n";
     
     auto [palA, posA] = Manacher::longestPalindrome(seqA);
-    std::cout << "Sequence A longest palindrome: \"" << palA << "\" at position " << posA 
-              << " (length: " << palA.size() << ")\n";
+    std::cout << "\nSequence A:\n";
+    std::cout << "  Longest palindrome: \"" << palA << "\"\n";
+    std::cout << "  Position: " << posA << ", Length: " << palA.size() << "\n";
     
     auto [palB, posB] = Manacher::longestPalindrome(seqB);
-    std::cout << "Sequence B longest palindrome: \"" << palB << "\" at position " << posB 
-              << " (length: " << palB.size() << ")\n";
+    std::cout << "\nSequence B:\n";
+    std::cout << "  Longest palindrome: \"" << palB << "\"\n";
+    std::cout << "  Position: " << posB << ", Length: " << palB.size() << "\n";
     
-    // Detailed radius propagation example
-    std::cout << "\nRadius propagation example (small string):\n";
+    std::cout << "\n[Radius Propagation Example]\n";
+    std::cout << "String: \"ACGTGCA\" (palindrome ACGTGCA with center at T)\n";
     Manacher::printRadiiExplanation("ACGTGCA");
     
-    std::cout << "\nCorrectness Justification:\n";
-    std::cout << "- The algorithm exploits symmetry: if position i is within a known\n";
-    std::cout << "  palindrome [l,r], its mirror i' = 2*center - i gives initial radius.\n";
-    std::cout << "- Expansion only occurs past previously checked boundaries.\n";
-    std::cout << "- Each character participates in at most 2 comparisons → O(n) total.\n";
+    std::cout << "\n[CORRECTNESS JUSTIFICATION - Radius Propagation]\n";
+    std::cout << "The algorithm maintains the rightmost palindrome boundary [l, r].\n";
+    std::cout << "For each position i:\n";
+    std::cout << "  1. If i < r: Use mirror position i' = 2*center - i\n";
+    std::cout << "     Initial radius = min(p[i'], r - i) due to symmetry\n";
+    std::cout << "  2. Expand beyond known bounds if possible\n";
+    std::cout << "  3. Update [l, r] if expansion extends past r\n";
+    std::cout << "\n";
+    std::cout << "PROOF OF O(n):\n";
+    std::cout << "  - Right boundary r only moves right (never left)\n";
+    std::cout << "  - Each character is involved in at most 2 comparisons:\n";
+    std::cout << "    once during expansion, once through mirroring\n";
+    std::cout << "  - Total comparisons ≤ 2n → O(n) time complexity\n";
     
-    // 2.b Suffix Array with Kasai LCP
-    std::cout << "\n--- 2.b Suffix Array + Kasai LCP ---\n";
+    // ========================================================================
+    // 2.b SUFFIX ARRAY with KASAI LCP - Motif Queries
+    // ========================================================================
+    std::cout << "\n" << std::string(70, '-') << "\n";
+    std::cout << "2.b. SUFFIX ARRAY + KASAI LCP - Exact Substring Queries\n";
+    std::cout << std::string(70, '-') << "\n";
     
+    // Build suffix array for A#B (# is unique sentinel)
     std::string combined = seqA + "#" + seqB;
     SuffixArray sa(combined);
     
-    std::cout << "Built suffix array for A#B (length: " << combined.size() << ")\n";
+    std::cout << "\nBuilt Suffix Array for A#B with unique sentinel '#'\n";
+    std::cout << "Combined length: " << combined.size() << "\n";
     sa.print();
     
-    // Motif queries
-    std::vector<std::string> motifs = {"ACGT", "GCTA", "TTTT", "AATCG", "XXXX", "TACGTACGT"};
-    std::cout << "\nExact motif membership queries:\n";
-    sa.queryMotifs(motifs);
+    // MOTIF SET M = {M1, ..., Mk} with lengths 4-12
+    std::cout << "\n[MOTIF SET M - Exact Substring Membership Queries]\n";
+    std::cout << "Motif lengths: 4-12 bp (as specified)\n\n";
     
-    // 2.c Longest Common Substring
-    std::cout << "\n--- 2.c Longest Common Substring ---\n";
+    std::vector<std::string> motifs = {
+        "ACGT",         // M1: 4 bp - common tetranucleotide
+        "GAATTC",       // M2: 6 bp - EcoRI restriction site
+        "GCTA",         // M3: 4 bp - common pattern
+        "AATCGAATCG",   // M4: 10 bp - longer motif
+        "TACGTACGT",    // M5: 9 bp - repeated unit
+        "TATA",         // M6: 4 bp - TATA box element
+        "TTTTACGT",     // M7: 8 bp 
+        "XXXXXX"        // M8: 6 bp - should NOT be found
+    };
     
-    std::cout << "\nMethod 1: Suffix Array + LCP\n";
+    std::cout << "Motif membership queries (using binary search on SA):\n";
+    std::cout << std::string(50, '-') << "\n";
+    for (size_t i = 0; i < motifs.size(); i++) {
+        const auto& motif = motifs[i];
+        auto positions = sa.findAll(motif);
+        std::cout << "M" << i+1 << " \"" << motif << "\" (len=" << motif.size() << "): ";
+        if (positions.empty()) {
+            std::cout << "NOT FOUND\n";
+        } else {
+            std::cout << "FOUND at " << positions.size() << " position(s): ";
+            for (size_t j = 0; j < std::min(positions.size(), (size_t)5); j++) {
+                std::cout << positions[j];
+                if (j < positions.size() - 1 && j < 4) std::cout << ", ";
+            }
+            if (positions.size() > 5) std::cout << "...";
+            std::cout << "\n";
+        }
+    }
+    
+    std::cout << "\nSuffix Array Query Complexity: O(m log n) per query\n";
+    std::cout << "  where m = motif length, n = |A| + |B| + 1\n";
+    
+    // ========================================================================
+    // 2.c LONGEST COMMON SUBSTRING (LCSsubstr)
+    // ========================================================================
+    std::cout << "\n" << std::string(70, '-') << "\n";
+    std::cout << "2.c. LONGEST COMMON SUBSTRING (LCSsubstr)\n";
+    std::cout << std::string(70, '-') << "\n";
+    
+    std::cout << "\n[Method 1: Suffix Array + LCP]\n";
+    std::cout << "Approach: Find max LCP where adjacent suffixes come from different strings\n";
     auto [lcsSA, posSA] = LongestCommonSubstring::usingSuffixArray(seqA, seqB);
-    std::cout << "LCS: \"" << lcsSA << "\" (length: " << lcsSA.size() << ")\n";
+    std::cout << "Result: \"" << lcsSA << "\"\n";
+    std::cout << "Length: " << lcsSA.size() << " bp\n";
+    std::cout << "Complexity: O((|A|+|B|) log(|A|+|B|)) for SA construction + O(|A|+|B|) LCP\n";
     
-    std::cout << "\nMethod 2: Dynamic Programming O(|A|*|B|)\n";
+    std::cout << "\n[Method 2: Dynamic Programming - O(|A|×|B|) baseline]\n";
+    std::cout << "Approach: dp[i][j] = length of LCS ending at A[i-1] and B[j-1]\n";
     auto [lcsDP, posDP] = LongestCommonSubstring::usingDP(seqA, seqB);
-    std::cout << "LCS: \"" << lcsDP << "\" (length: " << lcsDP.size() << ")\n";
+    std::cout << "Result: \"" << lcsDP << "\"\n";
+    std::cout << "Length: " << lcsDP.size() << " bp\n";
+    std::cout << "Complexity: O(|A|×|B|) time, O(min(|A|,|B|)) space (optimized)\n";
     
-    // Verify both methods give same result
-    if (lcsSA == lcsDP) {
-        std::cout << "\n✓ Both methods produce the same LCS.\n";
-    } else {
-        std::cout << "\n! Methods produced different results (both valid if same length).\n";
+    // Comparison
+    std::cout << "\n[METHODOLOGICAL COMPARISON]\n";
+    if (lcsSA.size() == lcsDP.size()) {
+        std::cout << "✓ Both methods found LCS of same length: " << lcsSA.size() << "\n";
     }
     
-    // Find all LCS (if multiple)
     auto allLCS = LongestCommonSubstring::allLCS_DP(seqA, seqB);
-    if (allLCS.size() > 1) {
-        std::cout << "All LCS found: ";
-        for (const auto& s : allLCS) std::cout << "\"" << s << "\" ";
-        std::cout << "\n";
+    std::cout << "\nAll longest common substrings found:\n";
+    for (size_t i = 0; i < allLCS.size(); i++) {
+        std::cout << "  " << i+1 << ". \"" << allLCS[i] << "\"\n";
     }
+    
+    std::cout << "\n[COMPLEXITY SUMMARY]\n";
+    std::cout << "Suffix Array method: O(n log n) construction + O(n) LCP + O(n) scan\n";
+    std::cout << "DP method:          O(|A|×|B|) time, better for short sequences\n";
+    std::cout << "SA preferred when: |A|,|B| are large and SA reused for multiple queries\n";
 }
 
 #endif // DNA_ALGORITHMS_H

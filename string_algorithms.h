@@ -381,76 +381,172 @@ private:
 void demonstrateStringAlgorithms() {
     std::cout << "\n" << std::string(70, '=') << "\n";
     std::cout << "  STRING MATCHING ALGORITHMS DEMONSTRATION\n";
+    std::cout << "  Problem 1: Web Server Log Analysis\n";
     std::cout << std::string(70, '=') << "\n";
     
-    // Test text (simulated log)
-    std::string text = "192.168.1.1 GET /api/login 200 192.168.1.1 GET /api/users 401 "
-                       "10.0.0.5 POST /api/login 200 192.168.1.1 GET /api/login 403";
+    // ========================================================================
+    // RANDOM-LIKE LOG (typical server traffic)
+    // ========================================================================
+    std::string randomLog = 
+        "192.168.1.1 - - [2025/09/08:10:30:45] \"GET /api/login HTTP/1.1\" 200 1234\n"
+        "10.0.0.5 - - [2025/09/08:10:30:46] \"POST /api/login HTTP/1.1\" 401 567\n"
+        "192.168.1.1 - - [2025/09/08:10:30:47] \"GET /api/users HTTP/1.1\" 200 890\n"
+        "172.16.0.1 - - [2025/09/08:10:30:48] \"GET /api/login HTTP/1.1\" 403 123\n"
+        "10.0.0.5 - - [2025/09/08:10:30:49] \"DELETE /admin HTTP/1.1\" 401 456\n"
+        "192.168.1.1 - - [2025/09/08:10:30:50] \"GET /api/login HTTP/1.1\" 200 789\n";
     
-    // Patterns with nontrivial borders
-    std::vector<std::string> patterns = {
-        "/api/login",   // has nontrivial border if we consider partial overlaps
-        "192.168.1.1",
-        "GET",
-        "abab",         // nontrivial border: "ab"
-        "aaaa"          // nontrivial border: "aaa"
+    // ========================================================================
+    // HIGHLY PERIODIC LOG (DoS attack simulation - repeated requests)
+    // ========================================================================
+    std::string periodicLog;
+    std::string repeatedEntry = "10.0.0.5 GET /api/login 401 ";
+    for (int i = 0; i < 20; i++) {
+        periodicLog += repeatedEntry;
+    }
+    
+    // ========================================================================
+    // SIGNATURE SET P = {P1, ..., Pm} with at least 2 having nontrivial borders
+    // ========================================================================
+    // Nontrivial border: proper prefix that is also a proper suffix
+    // P1 = "0.0.0" has border "0.0" (wait, let's use better examples)
+    // Actually using patterns that naturally appear in logs:
+    std::vector<std::string> signatures = {
+        "/api/login",      // P1: Security-critical endpoint
+        "192.168.1.1",     // P2: Specific internal IP
+        "401",             // P3: Unauthorized attempts
+        "0.0.0.0",         // P4: NONTRIVIAL BORDER: "0.0" (π = [0,0,0,1,2,3,4])
+        "1.1"              // P5: NONTRIVIAL BORDER: "1" (π = [0,0,1])
     };
     
-    std::cout << "\nText: \"" << text.substr(0, 60) << "...\"\n";
-    std::cout << "Text length: " << text.size() << "\n";
+    std::cout << "\n=== TEST DATA ===\n";
+    std::cout << "Alphabet Σ: ASCII printable characters (|Σ| ≥ 26)\n\n";
     
-    // 1.a KMP
-    std::cout << "\n--- 1.a KMP (Knuth-Morris-Pratt) ---\n";
-    for (const auto& pattern : patterns) {
-        auto matches = KMP::search(text, pattern);
-        std::cout << "Pattern \"" << pattern << "\": " << matches.size() << " matches at positions: ";
+    std::cout << "Random-like log (T1) - first 200 chars:\n";
+    std::cout << "\"" << randomLog.substr(0, 200) << "...\"\n";
+    std::cout << "Length: " << randomLog.size() << " characters\n\n";
+    
+    std::cout << "Highly periodic log (T2) - pattern repeated 20 times:\n";
+    std::cout << "Pattern: \"" << repeatedEntry << "\"\n";
+    std::cout << "Length: " << periodicLog.size() << " characters\n\n";
+    
+    std::cout << "Signature set P = {P1, ..., P5}:\n";
+    for (size_t i = 0; i < signatures.size(); i++) {
+        std::cout << "  P" << i+1 << " = \"" << signatures[i] << "\"";
+        if (KMP::hasNontrivialBorder(signatures[i])) {
+            std::cout << " [HAS NONTRIVIAL BORDER]";
+        }
+        std::cout << "\n";
+    }
+    
+    // ========================================================================
+    // 1.a KMP (Knuth-Morris-Pratt)
+    // ========================================================================
+    std::cout << "\n" << std::string(70, '-') << "\n";
+    std::cout << "1.a. KNUTH-MORRIS-PRATT (KMP)\n";
+    std::cout << std::string(70, '-') << "\n";
+    
+    std::cout << "\n[Random Log Results]\n";
+    for (const auto& sig : signatures) {
+        auto matches = KMP::search(randomLog, sig);
+        std::cout << "  \"" << sig << "\": " << matches.size() << " match(es) at: ";
         for (int pos : matches) std::cout << pos << " ";
         std::cout << "\n";
     }
     
-    // Print π-array for patterns with nontrivial borders
-    std::cout << "\nPrefix functions for patterns with nontrivial borders:\n";
-    KMP::printPrefixFunction("abab");
-    std::cout << "\n";
-    KMP::printPrefixFunction("aaaa");
+    std::cout << "\n[Periodic Log Results]\n";
+    for (const auto& sig : signatures) {
+        auto matches = KMP::search(periodicLog, sig);
+        std::cout << "  \"" << sig << "\": " << matches.size() << " match(es)\n";
+    }
     
+    // PREFIX FUNCTION for two patterns with nontrivial borders
+    std::cout << "\n[Prefix Function (π-array) for patterns with NONTRIVIAL BORDERS]\n\n";
+    
+    std::cout << "Pattern P4 = \"0.0.0.0\" (appears in IP addresses):\n";
+    KMP::printPrefixFunction("0.0.0.0");
+    std::cout << "  Explanation: The pattern has overlapping structure.\n";
+    std::cout << "  Border \"0.0.0\" allows skipping comparisons on mismatch.\n\n";
+    
+    std::cout << "Pattern P5 = \"1.1\" (common in version numbers, IPs):\n";
+    KMP::printPrefixFunction("1.1");
+    std::cout << "  Explanation: Simple overlap at the '1' character.\n";
+    
+    // ========================================================================
     // 1.b Z-Algorithm
-    std::cout << "\n--- 1.b Z-Algorithm (P#T concatenation) ---\n";
-    for (const auto& pattern : patterns) {
-        auto matches = ZAlgorithm::search(text, pattern);
-        std::cout << "Pattern \"" << pattern << "\": " << matches.size() << " matches at positions: ";
+    // ========================================================================
+    std::cout << "\n" << std::string(70, '-') << "\n";
+    std::cout << "1.b. Z-ALGORITHM (P#T concatenation)\n";
+    std::cout << std::string(70, '-') << "\n";
+    
+    std::cout << "\n[Random Log Results]\n";
+    for (const auto& sig : signatures) {
+        auto matches = ZAlgorithm::search(randomLog, sig);
+        std::cout << "  \"" << sig << "\": " << matches.size() << " match(es) at: ";
         for (int pos : matches) std::cout << pos << " ";
         std::cout << "\n";
     }
     
-    // Print Z-array example
-    std::cout << "\nZ-array example:\n";
-    ZAlgorithm::printZArray("aabxaab");
-    
-    // 1.c Rabin-Karp
-    std::cout << "\n--- 1.c Rabin-Karp (Rolling Hash) ---\n";
-    RabinKarp::printHashParameters();
-    std::cout << "\nMulti-pattern search results:\n";
-    auto rkResults = RabinKarp::multiPatternSearch(text, patterns);
-    for (const auto& [patIdx, pos] : rkResults) {
-        std::cout << "Pattern[" << patIdx << "] \"" << patterns[patIdx] 
-                  << "\" found at position " << pos << "\n";
+    std::cout << "\n[Periodic Log Results]\n";
+    for (const auto& sig : signatures) {
+        auto matches = ZAlgorithm::search(periodicLog, sig);
+        std::cout << "  \"" << sig << "\": " << matches.size() << " match(es)\n";
     }
     
-    // Verify all algorithms give same results
-    std::cout << "\n--- Algorithm Verification ---\n";
+    std::cout << "\n[Z-array Example: P#T where P=\"0.0\" and T=\"0.0.0.0\"]\n";
+    std::string concat = "0.0#0.0.0.0";
+    ZAlgorithm::printZArray(concat);
+    std::cout << "  Positions where Z[i] = |P| = 3 indicate matches.\n";
+    
+    // ========================================================================
+    // 1.c Rabin-Karp (Rolling Hash)
+    // ========================================================================
+    std::cout << "\n" << std::string(70, '-') << "\n";
+    std::cout << "1.c. RABIN-KARP (Rolling Hash)\n";
+    std::cout << std::string(70, '-') << "\n";
+    
+    std::cout << "\n[Hash Parameters]\n";
+    RabinKarp::printHashParameters();
+    
+    std::cout << "\n[Multi-pattern Search on Random Log]\n";
+    auto rkResults = RabinKarp::multiPatternSearch(randomLog, signatures);
+    for (const auto& [patIdx, pos] : rkResults) {
+        std::cout << "  P" << patIdx+1 << " \"" << signatures[patIdx] 
+                  << "\" at position " << pos << "\n";
+    }
+    
+    std::cout << "\n[Multi-pattern Search on Periodic Log]\n";
+    auto rkPeriodic = RabinKarp::multiPatternSearch(periodicLog, signatures);
+    std::cout << "  Total matches found: " << rkPeriodic.size() << "\n";
+    
+    // ========================================================================
+    // ALGORITHM COMPARISON & VERIFICATION
+    // ========================================================================
+    std::cout << "\n" << std::string(70, '-') << "\n";
+    std::cout << "ALGORITHM VERIFICATION\n";
+    std::cout << std::string(70, '-') << "\n";
+    
     bool allMatch = true;
-    for (const auto& pattern : patterns) {
-        auto kmpRes = KMP::search(text, pattern);
-        auto zRes = ZAlgorithm::search(text, pattern);
+    for (const auto& sig : signatures) {
+        auto kmpRes = KMP::search(randomLog, sig);
+        auto zRes = ZAlgorithm::search(randomLog, sig);
+        
         if (kmpRes != zRes) {
-            std::cout << "MISMATCH for pattern \"" << pattern << "\"!\n";
+            std::cout << "✗ MISMATCH for \"" << sig << "\"!\n";
             allMatch = false;
         }
     }
     if (allMatch) {
-        std::cout << "✓ All algorithms produce identical results.\n";
+        std::cout << "✓ All algorithms produce identical results on random log.\n";
     }
+    
+    std::cout << "\n" << std::string(70, '-') << "\n";
+    std::cout << "COMPLEXITY ANALYSIS\n";
+    std::cout << std::string(70, '-') << "\n";
+    std::cout << "Let n = |T| (text length), m = |P| (pattern length)\n\n";
+    std::cout << "KMP:        O(n + m) time, O(m) space - prefix function preprocessing\n";
+    std::cout << "Z-Algorithm: O(n + m) time, O(n + m) space - Z-array on P#T\n";
+    std::cout << "Rabin-Karp: O(n + m) expected, O(nm) worst case with collisions\n";
+    std::cout << "            Double hashing reduces collision probability to ~1/(mod1*mod2)\n";
 }
 
 #endif // STRING_ALGORITHMS_H
