@@ -1,0 +1,15 @@
+Algorithm,Time Complexity,Space Complexity,Problem
+KMP,O(n + m),O(m),String matching
+Z-Algorithm,O(n + m),O(n),String matching
+Rabin-Karp,O(n + m) avg,O(m),String matching
+Manacher,O(n),O(n),Palindromes
+Suffix Array + LCP,O(n log n),O(n),Suffix/LCP
+LCS (SA),O(n log n),O(n),LCS
+LCS (DP),O(nm),O(nm),LCS
+Edmonds-Karp,O(VE²),O(V²),Max Flow
+Dinic,O(V²E),O(V²),Max Flow
+Kruskal,O(E log E),O(V),MST
+Prim,O(E log V),O(V),MST
+Second MST,O(E log E + V²),O(V + E),2nd MST
+Biconnected,O(V + E),O(V + E),Bridges/BCC
+Expression Parser,O(n),O(n),Expression eval

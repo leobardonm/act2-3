@@ -56,10 +56,10 @@ def plot_dna_benchmarks():
     
     df = pd.read_csv('dna_benchmark.csv')
     
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    fig, axes = plt.subplots(1, 3, figsize=(16, 5))
     
     # Manacher
-    ax1 = axes[0, 0]
+    ax1 = axes[0]
     ax1.plot(df['size'], df['manacher_ms'], 'o-', color='tab:blue', linewidth=2, markersize=8)
     ax1.set_xlabel('Sequence Size', fontsize=12)
     ax1.set_ylabel('Time (ms)', fontsize=12)
@@ -67,28 +67,20 @@ def plot_dna_benchmarks():
     ax1.grid(True, alpha=0.3)
     
     # Suffix Array Construction
-    ax2 = axes[0, 1]
+    ax2 = axes[1]
     ax2.plot(df['size'], df['suffix_array_ms'], 's-', color='tab:orange', linewidth=2, markersize=8)
     ax2.set_xlabel('Sequence Size', fontsize=12)
     ax2.set_ylabel('Time (ms)', fontsize=12)
     ax2.set_title('Suffix Array Construction - O(n log n)', fontsize=14)
     ax2.grid(True, alpha=0.3)
     
-    # LCS Suffix Array
-    ax3 = axes[1, 0]
-    ax3.plot(df['size'], df['lcs_sa_ms'], '^-', color='tab:green', linewidth=2, markersize=8)
+    # LCS DP
+    ax3 = axes[2]
+    ax3.plot(df['size'], df['lcs_dp_ms'], 'd-', color='tab:red', linewidth=2, markersize=8)
     ax3.set_xlabel('Sequence Size', fontsize=12)
     ax3.set_ylabel('Time (ms)', fontsize=12)
-    ax3.set_title('LCS via Suffix Array - O(n log n)', fontsize=14)
+    ax3.set_title('LCS via Dynamic Programming - O(nm)', fontsize=14)
     ax3.grid(True, alpha=0.3)
-    
-    # LCS DP
-    ax4 = axes[1, 1]
-    ax4.plot(df['size'], df['lcs_dp_ms'], 'd-', color='tab:red', linewidth=2, markersize=8)
-    ax4.set_xlabel('Sequence Size', fontsize=12)
-    ax4.set_ylabel('Time (ms)', fontsize=12)
-    ax4.set_title('LCS via Dynamic Programming - O(nm)', fontsize=14)
-    ax4.grid(True, alpha=0.3)
     
     plt.tight_layout()
     plt.savefig('dna_benchmark_plot.png', dpi=150, bbox_inches='tight')
@@ -103,43 +95,29 @@ def plot_graph_benchmarks():
     
     df = pd.read_csv('graph_benchmark.csv')
     
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
     
-    # Max Flow comparison
-    ax1 = axes[0, 0]
-    ax1.plot(df['vertices'], df['edmonds_karp_ms'], 'o-', label='Edmonds-Karp', linewidth=2, markersize=8)
-    ax1.plot(df['vertices'], df['dinic_ms'], 's-', label='Dinic', linewidth=2, markersize=8)
+    # MST comparison - Linear scale
+    ax1.plot(df['vertices'], df['kruskal_ms'], '^-', label='Kruskal', linewidth=2, markersize=8)
+    ax1.plot(df['vertices'], df['prim_ms'], 'd-', label='Prim', linewidth=2, markersize=8)
     ax1.set_xlabel('Number of Vertices', fontsize=12)
     ax1.set_ylabel('Time (ms)', fontsize=12)
-    ax1.set_title('Maximum Flow Algorithms', fontsize=14)
+    ax1.set_title('MST Algorithms - Runtime Comparison', fontsize=14)
     ax1.legend()
     ax1.grid(True, alpha=0.3)
     
-    # MST comparison
-    ax2 = axes[0, 1]
-    ax2.plot(df['vertices'], df['kruskal_ms'], '^-', label='Kruskal', linewidth=2, markersize=8)
-    ax2.plot(df['vertices'], df['prim_ms'], 'd-', label='Prim', linewidth=2, markersize=8)
+    # MST comparison - Log-log scale
+    ax2.loglog(df['vertices'], df['kruskal_ms'], '^-', label='Kruskal', linewidth=2, markersize=8)
+    ax2.loglog(df['vertices'], df['prim_ms'], 'd-', label='Prim', linewidth=2, markersize=8)
+    # Reference line for O(E log E) where E = 3*V
+    vertices = df['vertices'].values
+    ref_kruskal = vertices * np.log(3*vertices) * (df['kruskal_ms'].iloc[0] / (vertices[0] * np.log(3*vertices[0])))
+    ax2.loglog(vertices, ref_kruskal, '--', color='gray', alpha=0.7, label='O(E log E) reference')
     ax2.set_xlabel('Number of Vertices', fontsize=12)
     ax2.set_ylabel('Time (ms)', fontsize=12)
-    ax2.set_title('MST Algorithms', fontsize=14)
+    ax2.set_title('Log-Log Scale (verifies complexity)', fontsize=14)
     ax2.legend()
-    ax2.grid(True, alpha=0.3)
-    
-    # Second MST
-    ax3 = axes[1, 0]
-    ax3.plot(df['vertices'], df['second_mst_ms'], 'o-', color='tab:purple', linewidth=2, markersize=8)
-    ax3.set_xlabel('Number of Vertices', fontsize=12)
-    ax3.set_ylabel('Time (ms)', fontsize=12)
-    ax3.set_title('Second MST Computation', fontsize=14)
-    ax3.grid(True, alpha=0.3)
-    
-    # Biconnected Components
-    ax4 = axes[1, 1]
-    ax4.plot(df['vertices'], df['biconnected_ms'], 's-', color='tab:brown', linewidth=2, markersize=8)
-    ax4.set_xlabel('Number of Vertices', fontsize=12)
-    ax4.set_ylabel('Time (ms)', fontsize=12)
-    ax4.set_title('Biconnected Components (Tarjan)', fontsize=14)
-    ax4.grid(True, alpha=0.3)
+    ax2.grid(True, alpha=0.3, which='both')
     
     plt.tight_layout()
     plt.savefig('graph_benchmark_plot.png', dpi=150, bbox_inches='tight')
